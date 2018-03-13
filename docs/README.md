@@ -12,7 +12,7 @@ In this project the are two tools: the first one takes an input cubemap and proj
 > 
 Once the result is computed you can see it and toggle the original version and the projected one.
 <p align="center">
-  <img src="banner.png">
+  <img src="project.png">
 </p>
 The second tool is a component to add on a game object; its purpose is to get all the game object's children and foreach of their vertices compute and project onto the SH basis the **Geometry Factor**. It won't change directly the objects meshes but will create a clone object to modify.
 
