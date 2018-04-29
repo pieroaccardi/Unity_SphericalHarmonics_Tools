@@ -404,10 +404,81 @@ public class SphericalHarmonics
         return true;
     }
 
-    public static bool GPU_Project_Uniform_9Coeff(Cubemap input, float[] output)
-    {
-        //to implement
+    public static bool GPU_Project_Uniform_9Coeff(Cubemap input, Vector4[] output)
+    {        
+        //the starting number of groups 
+        int ceiled_size = Mathf.CeilToInt(input.width / 8.0f);
 
+        ComputeBuffer output_buffer = new ComputeBuffer(9, 16);  //the output is a buffer with 9 float4
+        ComputeBuffer ping_buffer = new ComputeBuffer(ceiled_size * ceiled_size * 6, 16);
+        ComputeBuffer pong_buffer = new ComputeBuffer(ceiled_size * ceiled_size * 6, 16);
+
+        ComputeShader reduce = Resources.Load<ComputeShader>("Shaders/Reduce_Uniform");
+
+        //can't have direct access to the cubemap in the compute shader (I think), so i copy the cubemap faces onto a texture2d array
+        RenderTextureDescriptor desc = new RenderTextureDescriptor();
+        desc.autoGenerateMips = false;
+        desc.bindMS = false;
+        desc.colorFormat = ConvertRenderFormat(input.format);
+        desc.depthBufferBits = 0;
+        desc.dimension = UnityEngine.Rendering.TextureDimension.Tex2DArray;
+        desc.enableRandomWrite = false;
+        desc.height = input.height;
+        desc.width = input.width;
+        desc.msaaSamples = 1;
+        desc.sRGB = true;
+        desc.useMipMap = false;
+        desc.volumeDepth = 6;
+        RenderTexture converted_input = new RenderTexture(desc);
+        converted_input.Create();
+
+        for (int face = 0; face < 6; ++face)
+            Graphics.CopyTexture(input, face, 0, converted_input, face, 0);
+
+        //cycle 9 coefficients
+        for (int c = 0; c < 9; ++c)
+        {
+            ceiled_size = Mathf.CeilToInt(input.width / 8.0f);
+
+            int kernel = reduce.FindKernel("sh_" + c.ToString());
+            reduce.SetInt("coeff", c);
+
+            //first pass, I compute the integral and make a first pass of reduction
+            reduce.SetTexture(kernel, "input_data", converted_input);
+            reduce.SetBuffer(kernel, "output_buffer", ping_buffer);
+            reduce.SetBuffer(kernel, "coefficients", output_buffer);
+            reduce.SetInt("ceiled_size", ceiled_size);
+            reduce.SetInt("input_size", input.width);
+            reduce.SetInt("row_size", ceiled_size);
+            reduce.SetInt("face_size", ceiled_size * ceiled_size);
+            reduce.Dispatch(kernel, ceiled_size, ceiled_size, 1);
+
+            //second pass, complete reduction
+            kernel = reduce.FindKernel("Reduce");
+
+            int index = 0;
+            ComputeBuffer[] buffers = { ping_buffer, pong_buffer };
+            while(ceiled_size > 1)
+            {
+                reduce.SetInt("input_size", ceiled_size);
+                ceiled_size = Mathf.CeilToInt(ceiled_size / 8.0f);
+                reduce.SetInt("ceiled_size", ceiled_size);
+                reduce.SetBuffer(kernel, "coefficients", output_buffer);
+                reduce.SetBuffer(kernel, "input_buffer", buffers[index]);
+                reduce.SetBuffer(kernel, "output_buffer", buffers[(index + 1) % 2]);
+                reduce.Dispatch(kernel, ceiled_size, ceiled_size, 1);
+                index = (index + 1) % 2;
+            }
+        }
+
+        Vector4[] data = new Vector4[9];
+        output_buffer.GetData(data);
+        for (int c = 0; c < 9; ++c)
+            output[c] = data[c];        
+
+        pong_buffer.Release();
+        ping_buffer.Release();
+        output_buffer.Release();
         return true;
     }
 
@@ -455,6 +526,8 @@ public class SphericalHarmonics
         {
             output[i] = data[i];
         }
+
+        coefficients_buffer.Release();
 
         return true;
     }

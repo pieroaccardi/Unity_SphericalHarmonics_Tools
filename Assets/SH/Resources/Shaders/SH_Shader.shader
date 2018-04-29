@@ -51,7 +51,7 @@
 				float4 sh_1 = float4(v.uv2, v.uv3);
 				float sh_2 = v.uv4.x;
 
-				//i'm using the coefficients frome the grace cubemap
+				//i'm using the coefficients from the grace cubemap
 				float r = (dot(sh_0, float4(0.9082, -0.1342, 0.0227, -0.0247)) + dot(sh_1, float4(-0.0384, -0.0158, -0.0641, -0.0485)) - sh_2 * 0.2564);
 				float g = (dot(sh_0, float4(0.6772, -0.07, 0.0255, -0.0245)) + dot(sh_1, float4(-0.0391, 0.0143, -0.074, -0.0434)) - sh_2 * 0.02328);
 				float b = (dot(sh_0, float4(0.5759, -0.0224, 0.0385, -0.0363)) + dot(sh_1, float4(-0.039, 0.0004, -0.0751, -0.0476)) - sh_2 * 0.2214);

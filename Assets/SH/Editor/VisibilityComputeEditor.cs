@@ -10,7 +10,7 @@ public class VisibilityComputeEditor : Editor
     {
         base.OnInspectorGUI();
 
-        if (GUILayout.Button("Compute children"))
+        if (GUILayout.Button("Compute static children"))
         {
             (target as VisibilityCompute).Compute();
         }

@@ -88,6 +88,23 @@ public class CubemapSHProjector : EditorWindow
 
             EditorGUILayout.Space();
 
+            if (GUILayout.Button("GPU Uniform 9 Coefficients"))
+            {
+                coefficients = new Vector4[9];
+                if (SphericalHarmonics.GPU_Project_Uniform_9Coeff(input_cubemap, coefficients))
+                {
+                    for (int i = 0; i < 9; ++i)
+                    {
+                        view_mat.SetVector("c" + i.ToString(), coefficients[i]);
+                        view_mat.SetTexture("input", input_cubemap);
+                    }
+
+                    SceneView.RepaintAll();
+                }
+            }
+
+            EditorGUILayout.Space();
+
             if (GUILayout.Button("GPU Monte Carlo 9 Coefficients"))
             {
                 coefficients = new Vector4[9];
