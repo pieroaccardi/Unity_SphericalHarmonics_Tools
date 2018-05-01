@@ -3,11 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-//ATTUALI PROBLEMI:
-//- lentezza generale
-//- gli occluder devono avere il materiale nero settato manualmente in scena (non esiste la funzione Camera.RenderToCubemapWithShader, risolvibile tramite camera.SetReplacementShader)
-//- i coefficienti nel vertex buffer sono messi a caso (vertex color, uv2, uv3 e uv4)
-
 public class VisibilityCompute : MonoBehaviour
 {
     public void Compute()
@@ -50,6 +45,9 @@ public class VisibilityCompute : MonoBehaviour
                 total_vertex = mr.gameObject.GetComponent<MeshFilter>().sharedMesh.vertexCount;
         }
 
+        //shader for rendering the visibility (black = occluded)
+        Shader black_shader = Shader.Find("SH/BlackShader");
+
         foreach (MeshRenderer mr in to_compute)
         {
             if (mr.gameObject.isStatic) //compute only static objects
@@ -74,7 +72,10 @@ public class VisibilityCompute : MonoBehaviour
                     Vector3 world_normal = clone.transform.localToWorldMatrix.MultiplyVector(normals[v]);
                     tmp_camera.transform.position = vertex_world_position + world_normal * 0.011f;  //offset the camera a little in the normal direction
                     cosine_skybox.SetVector("N", world_normal);
+
+                    tmp_camera.SetReplacementShader(black_shader, "");
                     tmp_camera.RenderToCubemap(visibility_cubemap);
+                    tmp_camera.ResetReplacementShader();
 
                     //project the cubemap to the spherical harmonic basis
                     SphericalHarmonics.GPU_Project_Uniform_9Coeff(visibility_cubemap, coefficients);
