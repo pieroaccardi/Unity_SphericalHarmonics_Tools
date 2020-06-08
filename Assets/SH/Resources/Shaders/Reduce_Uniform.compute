@@ -11,10 +11,10 @@
 
 #include "SH_Utils.cginc"
 
-Texture2DArray<float4>	input_data;
-RWBuffer<float4>		output_buffer;
-RWBuffer<float4>		coefficients;
-Buffer<float4>			input_buffer;
+Texture2DArray<float4>      input_data;
+RWStructuredBuffer<float4>  output_buffer;
+RWStructuredBuffer<float4>  coefficients;
+StructuredBuffer<float4>    input_buffer;
 
 uint ceiled_size;
 uint input_size;
